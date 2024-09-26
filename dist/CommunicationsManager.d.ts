@@ -11,6 +11,7 @@ export interface ICommunicationsManagerConfig {
     requestTimeout?: number;
 }
 export declare class CommunicationsManager extends EventEmitter {
+    private isConnecting;
     private isAuthenticated;
     private authenticationPromise;
     private logger;

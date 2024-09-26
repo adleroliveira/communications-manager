@@ -63,6 +63,7 @@ var CommunicationsManager = /** @class */ (function (_super) {
     __extends(CommunicationsManager, _super);
     function CommunicationsManager(config) {
         var _this = _super.call(this) || this;
+        _this.isConnecting = false;
         _this.isAuthenticated = false;
         _this.authenticationPromise = null;
         _this.logger = new Logger_1.Logger(Logger_1.LogLevel.INFO);
@@ -101,6 +102,9 @@ var CommunicationsManager = /** @class */ (function (_super) {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        if (this.isConnecting)
+                            return [2 /*return*/];
+                        this.isConnecting = true;
                         this.logger.info("WebSocket connection established");
                         this.authenticationPromise = this.performAuthentication();
                         _a.label = 1;
@@ -125,7 +129,9 @@ var CommunicationsManager = /** @class */ (function (_super) {
                     case 4:
                         this.authenticationPromise = null;
                         return [7 /*endfinally*/];
-                    case 5: return [2 /*return*/];
+                    case 5:
+                        this.isConnecting = false;
+                        return [2 /*return*/];
                 }
             });
         });
@@ -233,6 +239,9 @@ var CommunicationsManager = /** @class */ (function (_super) {
         this.logger.info('Closing CommunicationsManager');
         this.heartbeatManager.stopHeartbeat();
         this.webSocketManager.close();
+        this.isAuthenticated = false;
+        this.authenticationPromise = null;
+        this.removeAllListeners();
     };
     CommunicationsManager.prototype.reconnect = function () {
         this.logger.info('Manual reconnection initiated.');

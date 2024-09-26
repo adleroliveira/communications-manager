@@ -22,6 +22,7 @@ export class WebSocketManager extends EventEmitter {
 
     private connect() {
         const secureUrl = this.getSecureUrl(this.url, this.secure);
+        this.logger.info(`Attempting to connect to ${secureUrl}`);
         this.ws = new WebSocket(secureUrl);
         this.setHooks();
     }
@@ -31,19 +32,26 @@ export class WebSocketManager extends EventEmitter {
     }
 
     private setHooks() {
-        this.ws.onopen = () => this.emit('open');
+        this.ws.onopen = () => {
+            this.logger.info(`WebSocket opened. ReadyState: ${this.ws.readyState}`);
+            this.emit('open');
+        };
         this.ws.onclose = (event) => {
+            this.logger.info(`WebSocket closed. ReadyState: ${this.ws.readyState}. Code: ${event.code}, Reason: ${event.reason}`);
             this.emit('close', event);
             this.handleReconnection();
         };
-        this.ws.onerror = (error) => this.emit('error', error);
+        this.ws.onerror = (error) => {
+            this.logger.error('WebSocket error:', error);
+            this.emit('error', error);
+        };
         this.ws.onmessage = (event) => this.emit('message', event.data);
     }
 
     private handleReconnection() {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            const delay = this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1);
+            const delay = this.reconnectAttempts === 1 ? 0 : this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1);
             this.logger.info(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`);
             setTimeout(() => this.connect(), delay);
         } else {

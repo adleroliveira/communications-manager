@@ -18,6 +18,7 @@ export interface ICommunicationsManagerConfig {
 }
 
 export class CommunicationsManager extends EventEmitter {
+    private isConnecting: boolean = false;
     private isAuthenticated: boolean = false;
     private authenticationPromise: Promise<boolean> | null = null;
     private logger: Logger;
@@ -34,20 +35,20 @@ export class CommunicationsManager extends EventEmitter {
 
         try {
             this.webSocketManager = new WebSocketManager(
-                config.url, 
-                config.secure, 
-                config.maxReconnectAttempts, 
+                config.url,
+                config.secure,
+                config.maxReconnectAttempts,
                 config.reconnectInterval
             );
-            this.requestManager = new RequestManager({ webSocketManager: this.webSocketManager, requestTimeout: config.requestTimeout});
+            this.requestManager = new RequestManager({ webSocketManager: this.webSocketManager, requestTimeout: config.requestTimeout });
             this.authManager = new AuthenticationManager(this.requestManager);
             this.subscriptionManager = new SubscriptionManager(this.requestManager);
             this.heartbeatManager = new HeartbeatManager(this.requestManager, config.heartbeatInterval);
-    
+
             if (config.authToken) {
                 this.authManager.setAuthToken(config.authToken);
             }
-    
+
             this.setupWebSocketHooks();
         } catch (error) {
             this.logger.error('Error initializing CommunicationsManager', { error });
@@ -69,9 +70,11 @@ export class CommunicationsManager extends EventEmitter {
     }
 
     private async handleOpen() {
+        if (this.isConnecting) return;
+        this.isConnecting = true;
         this.logger.info("WebSocket connection established");
         this.authenticationPromise = this.performAuthentication();
-        
+
         try {
             const authSuccess = await this.authenticationPromise;
             if (authSuccess) {
@@ -86,6 +89,7 @@ export class CommunicationsManager extends EventEmitter {
         } finally {
             this.authenticationPromise = null;
         }
+        this.isConnecting = false;
     }
 
     private async performAuthentication(): Promise<boolean> {
@@ -153,6 +157,9 @@ export class CommunicationsManager extends EventEmitter {
         this.logger.info('Closing CommunicationsManager');
         this.heartbeatManager.stopHeartbeat();
         this.webSocketManager.close();
+        this.isAuthenticated = false;
+        this.authenticationPromise = null;
+        this.removeAllListeners();
     }
 
     public reconnect() {

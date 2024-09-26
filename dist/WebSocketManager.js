@@ -36,6 +36,7 @@ var WebSocketManager = /** @class */ (function (_super) {
     }
     WebSocketManager.prototype.connect = function () {
         var secureUrl = this.getSecureUrl(this.url, this.secure);
+        this.logger.info("Attempting to connect to ".concat(secureUrl));
         this.ws = new WebSocket(secureUrl);
         this.setHooks();
     };
@@ -44,19 +45,26 @@ var WebSocketManager = /** @class */ (function (_super) {
     };
     WebSocketManager.prototype.setHooks = function () {
         var _this = this;
-        this.ws.onopen = function () { return _this.emit('open'); };
+        this.ws.onopen = function () {
+            _this.logger.info("WebSocket opened. ReadyState: ".concat(_this.ws.readyState));
+            _this.emit('open');
+        };
         this.ws.onclose = function (event) {
+            _this.logger.info("WebSocket closed. ReadyState: ".concat(_this.ws.readyState, ". Code: ").concat(event.code, ", Reason: ").concat(event.reason));
             _this.emit('close', event);
             _this.handleReconnection();
         };
-        this.ws.onerror = function (error) { return _this.emit('error', error); };
+        this.ws.onerror = function (error) {
+            _this.logger.error('WebSocket error:', error);
+            _this.emit('error', error);
+        };
         this.ws.onmessage = function (event) { return _this.emit('message', event.data); };
     };
     WebSocketManager.prototype.handleReconnection = function () {
         var _this = this;
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            var delay = this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1);
+            var delay = this.reconnectAttempts === 1 ? 0 : this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1);
             this.logger.info("Attempting to reconnect (".concat(this.reconnectAttempts, "/").concat(this.maxReconnectAttempts, ") in ").concat(delay, "ms..."));
             setTimeout(function () { return _this.connect(); }, delay);
         }
