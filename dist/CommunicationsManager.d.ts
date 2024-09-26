@@ -1,4 +1,6 @@
+/// <reference types="node" />
 import { IResponseData } from "./interfaces";
+import { EventEmitter } from 'events';
 export interface ICommunicationsManagerConfig {
     url: string;
     secure?: boolean;
@@ -8,7 +10,9 @@ export interface ICommunicationsManagerConfig {
     heartbeatInterval?: number;
     requestTimeout?: number;
 }
-export declare class CommunicationsManager {
+export declare class CommunicationsManager extends EventEmitter {
+    private isAuthenticated;
+    private authenticationPromise;
     private logger;
     private webSocketManager;
     private authManager;
@@ -19,9 +23,11 @@ export declare class CommunicationsManager {
     private validateConfig;
     private setupWebSocketHooks;
     private handleOpen;
+    private performAuthentication;
     private handleClose;
     private handleError;
     private handleMaxReconnectAttemptsReached;
+    ensureAuthenticated(): Promise<void>;
     request<I, O>(requestType: string, body: I, to?: string): Promise<IResponseData<O>>;
     subscribe(channel: string): Promise<void>;
     setAuthToken(token: string): void;

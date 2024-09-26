@@ -29,6 +29,9 @@ describe('CommunicationsManager', () => {
 
     // Reset all mocks before each test
     jest.clearAllMocks();
+
+    (AuthenticationManager.prototype.authenticate as jest.Mock).mockResolvedValue(true);
+    (AuthenticationManager.prototype.getAuthToken as jest.Mock).mockReturnValue('test-token');
   });
 
   test('constructor initializes all managers correctly', () => {
@@ -65,6 +68,12 @@ describe('CommunicationsManager', () => {
     const body = { data: 'test-data' };
     const to = 'test-destination';
 
+    // Trigger WebSocket open event
+    (WebSocketManager.prototype.on as jest.Mock).mock.calls.find(call => call[0] === 'open')[1]();
+
+    // Wait for authentication to complete
+    await new Promise(resolve => communicationsManager.once('authenticated', resolve));
+
     await communicationsManager.request(requestType, body, to);
 
     expect(RequestManager.prototype.request).toHaveBeenCalledWith(requestType, body, to);
@@ -73,6 +82,12 @@ describe('CommunicationsManager', () => {
   test('subscribe calls SubscriptionManager.subscribe', async () => {
     communicationsManager = new CommunicationsManager(config);
     const channel = 'test-channel';
+
+    // Trigger WebSocket open event
+    (WebSocketManager.prototype.on as jest.Mock).mock.calls.find(call => call[0] === 'open')[1]();
+
+    // Wait for authentication to complete
+    await new Promise(resolve => communicationsManager.once('authenticated', resolve));
 
     await communicationsManager.subscribe(channel);
 

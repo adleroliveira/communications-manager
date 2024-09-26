@@ -1,4 +1,19 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -43,25 +58,31 @@ var RequestManager_1 = require("./RequestManager");
 var SubscriptionManager_1 = require("./SubscriptionManager");
 var HeartbeatManager_1 = require("./HeartbeatManager");
 var Logger_1 = require("./Logger");
-var CommunicationsManager = /** @class */ (function () {
+var events_1 = require("events");
+var CommunicationsManager = /** @class */ (function (_super) {
+    __extends(CommunicationsManager, _super);
     function CommunicationsManager(config) {
-        this.logger = new Logger_1.Logger(Logger_1.LogLevel.INFO);
-        this.validateConfig(config);
+        var _this = _super.call(this) || this;
+        _this.isAuthenticated = false;
+        _this.authenticationPromise = null;
+        _this.logger = new Logger_1.Logger(Logger_1.LogLevel.INFO);
+        _this.validateConfig(config);
         try {
-            this.webSocketManager = new WebSocketManager_1.WebSocketManager(config.url, config.secure, config.maxReconnectAttempts, config.reconnectInterval);
-            this.requestManager = new RequestManager_1.RequestManager({ webSocketManager: this.webSocketManager, requestTimeout: config.requestTimeout });
-            this.authManager = new AuthenticationManager_1.AuthenticationManager(this.requestManager);
-            this.subscriptionManager = new SubscriptionManager_1.SubscriptionManager(this.requestManager);
-            this.heartbeatManager = new HeartbeatManager_1.HeartbeatManager(this.requestManager, config.heartbeatInterval);
+            _this.webSocketManager = new WebSocketManager_1.WebSocketManager(config.url, config.secure, config.maxReconnectAttempts, config.reconnectInterval);
+            _this.requestManager = new RequestManager_1.RequestManager({ webSocketManager: _this.webSocketManager, requestTimeout: config.requestTimeout });
+            _this.authManager = new AuthenticationManager_1.AuthenticationManager(_this.requestManager);
+            _this.subscriptionManager = new SubscriptionManager_1.SubscriptionManager(_this.requestManager);
+            _this.heartbeatManager = new HeartbeatManager_1.HeartbeatManager(_this.requestManager, config.heartbeatInterval);
             if (config.authToken) {
-                this.authManager.setAuthToken(config.authToken);
+                _this.authManager.setAuthToken(config.authToken);
             }
-            this.setupWebSocketHooks();
+            _this.setupWebSocketHooks();
         }
         catch (error) {
-            this.logger.error('Error initializing CommunicationsManager', { error: error });
+            _this.logger.error('Error initializing CommunicationsManager', { error: error });
             throw new Error('Failed to initialize CommunicationsManager');
         }
+        return _this;
     }
     CommunicationsManager.prototype.validateConfig = function (config) {
         if (!config.url) {
@@ -76,30 +97,59 @@ var CommunicationsManager = /** @class */ (function () {
     };
     CommunicationsManager.prototype.handleOpen = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var error_1;
+            var authSuccess, error_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         this.logger.info("WebSocket connection established");
+                        this.authenticationPromise = this.performAuthentication();
                         _a.label = 1;
                     case 1:
-                        _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, this.authManager.authenticate()];
+                        _a.trys.push([1, 3, 4, 5]);
+                        return [4 /*yield*/, this.authenticationPromise];
                     case 2:
-                        if (_a.sent()) {
-                            this.requestManager.setAuthToken(this.authManager.getAuthToken());
-                            this.heartbeatManager.startHeartbeat();
-                            this.logger.info("WebSocket connection established");
+                        authSuccess = _a.sent();
+                        if (authSuccess) {
+                            this.isAuthenticated = true;
+                            this.emit('authenticated');
+                            this.logger.info("Authentication successful");
                         }
                         else {
                             this.logger.warn("Authentication failed");
                         }
-                        return [3 /*break*/, 4];
+                        return [3 /*break*/, 5];
                     case 3:
                         error_1 = _a.sent();
                         this.logger.error("Error during authentication", { error: error_1 });
-                        return [3 /*break*/, 4];
-                    case 4: return [2 /*return*/];
+                        return [3 /*break*/, 5];
+                    case 4:
+                        this.authenticationPromise = null;
+                        return [7 /*endfinally*/];
+                    case 5: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    CommunicationsManager.prototype.performAuthentication = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var error_2;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, this.authManager.authenticate()];
+                    case 1:
+                        if (_a.sent()) {
+                            this.requestManager.setAuthToken(this.authManager.getAuthToken());
+                            this.heartbeatManager.startHeartbeat();
+                            return [2 /*return*/, true];
+                        }
+                        return [3 /*break*/, 3];
+                    case 2:
+                        error_2 = _a.sent();
+                        this.logger.error("Error during authentication", { error: error_2 });
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/, false];
                 }
             });
         });
@@ -116,31 +166,63 @@ var CommunicationsManager = /** @class */ (function () {
     CommunicationsManager.prototype.handleMaxReconnectAttemptsReached = function () {
         this.logger.error('Maximum reconnection attempts reached. Use reconnect() method to try again.');
     };
+    CommunicationsManager.prototype.ensureAuthenticated = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (this.isAuthenticated)
+                            return [2 /*return*/];
+                        if (!this.authenticationPromise) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.authenticationPromise];
+                    case 1:
+                        _a.sent();
+                        return [3 /*break*/, 4];
+                    case 2: return [4 /*yield*/, new Promise(function (resolve) { return _this.once('authenticated', resolve); })];
+                    case 3:
+                        _a.sent();
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    };
     CommunicationsManager.prototype.request = function (requestType, body, to) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                try {
-                    return [2 /*return*/, this.requestManager.request(requestType, body, to)];
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.ensureAuthenticated()];
+                    case 1:
+                        _a.sent();
+                        try {
+                            return [2 /*return*/, this.requestManager.request(requestType, body, to)];
+                        }
+                        catch (error) {
+                            this.logger.error('Error making request', { requestType: requestType, error: error });
+                            throw error;
+                        }
+                        return [2 /*return*/];
                 }
-                catch (error) {
-                    this.logger.error('Error making request', { requestType: requestType, error: error });
-                    throw error;
-                }
-                return [2 /*return*/];
             });
         });
     };
     CommunicationsManager.prototype.subscribe = function (channel) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                try {
-                    return [2 /*return*/, this.subscriptionManager.subscribe(channel)];
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.ensureAuthenticated()];
+                    case 1:
+                        _a.sent();
+                        try {
+                            return [2 /*return*/, this.subscriptionManager.subscribe(channel)];
+                        }
+                        catch (error) {
+                            this.logger.error('Error subscribing to channel', { channel: channel, error: error });
+                            throw error;
+                        }
+                        return [2 /*return*/];
                 }
-                catch (error) {
-                    this.logger.error('Error subscribing to channel', { channel: channel, error: error });
-                    throw error;
-                }
-                return [2 /*return*/];
             });
         });
     };
@@ -172,5 +254,5 @@ var CommunicationsManager = /** @class */ (function () {
         this.requestManager.on(requestType, callback);
     };
     return CommunicationsManager;
-}());
+}(events_1.EventEmitter));
 exports.CommunicationsManager = CommunicationsManager;

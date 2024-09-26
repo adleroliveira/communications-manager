@@ -5,6 +5,7 @@ import { SubscriptionManager } from "./SubscriptionManager"
 import { HeartbeatManager } from "./HeartbeatManager"
 import { IResponseData } from "./interfaces"
 import { Logger, LogLevel } from './Logger';
+import { EventEmitter } from 'events';
 
 export interface ICommunicationsManagerConfig {
     url: string;
@@ -16,7 +17,9 @@ export interface ICommunicationsManagerConfig {
     requestTimeout?: number;
 }
 
-export class CommunicationsManager {
+export class CommunicationsManager extends EventEmitter {
+    private isAuthenticated: boolean = false;
+    private authenticationPromise: Promise<boolean> | null = null;
     private logger: Logger;
     private webSocketManager: WebSocketManager;
     private authManager: AuthenticationManager;
@@ -25,6 +28,7 @@ export class CommunicationsManager {
     private heartbeatManager: HeartbeatManager;
 
     constructor(config: ICommunicationsManagerConfig) {
+        super();
         this.logger = new Logger(LogLevel.INFO);
         this.validateConfig(config);
 
@@ -66,17 +70,35 @@ export class CommunicationsManager {
 
     private async handleOpen() {
         this.logger.info("WebSocket connection established");
+        this.authenticationPromise = this.performAuthentication();
+        
         try {
-            if (await this.authManager.authenticate()) {
-                this.requestManager.setAuthToken(this.authManager.getAuthToken()!);
-                this.heartbeatManager.startHeartbeat();
-                this.logger.info("WebSocket connection established");
+            const authSuccess = await this.authenticationPromise;
+            if (authSuccess) {
+                this.isAuthenticated = true;
+                this.emit('authenticated');
+                this.logger.info("Authentication successful");
             } else {
                 this.logger.warn("Authentication failed");
             }
         } catch (error) {
             this.logger.error("Error during authentication", { error });
+        } finally {
+            this.authenticationPromise = null;
         }
+    }
+
+    private async performAuthentication(): Promise<boolean> {
+        try {
+            if (await this.authManager.authenticate()) {
+                this.requestManager.setAuthToken(this.authManager.getAuthToken()!);
+                this.heartbeatManager.startHeartbeat();
+                return true;
+            }
+        } catch (error) {
+            this.logger.error("Error during authentication", { error });
+        }
+        return false;
     }
 
     private handleClose(event: CloseEvent) {
@@ -94,7 +116,17 @@ export class CommunicationsManager {
         this.logger.error('Maximum reconnection attempts reached. Use reconnect() method to try again.');
     }
 
+    public async ensureAuthenticated(): Promise<void> {
+        if (this.isAuthenticated) return;
+        if (this.authenticationPromise) {
+            await this.authenticationPromise;
+        } else {
+            await new Promise<void>((resolve) => this.once('authenticated', resolve));
+        }
+    }
+
     public async request<I, O>(requestType: string, body: I, to?: string): Promise<IResponseData<O>> {
+        await this.ensureAuthenticated();
         try {
             return this.requestManager.request(requestType, body, to);
         } catch (error) {
@@ -104,6 +136,7 @@ export class CommunicationsManager {
     }
 
     public async subscribe(channel: string): Promise<void> {
+        await this.ensureAuthenticated();
         try {
             return this.subscriptionManager.subscribe(channel);
         } catch (error) {
