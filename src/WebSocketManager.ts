@@ -51,7 +51,8 @@ export class WebSocketManager extends EventEmitter {
     private handleReconnection() {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            const delay = this.reconnectAttempts === 1 ? 0 : this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1);
+            const minDelay = 1000;
+            const delay = Math.max(minDelay, this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1));
             this.logger.info(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`);
             setTimeout(() => this.connect(), delay);
         } else {

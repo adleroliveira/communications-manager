@@ -64,7 +64,8 @@ var WebSocketManager = /** @class */ (function (_super) {
         var _this = this;
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            var delay = this.reconnectAttempts === 1 ? 0 : this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1);
+            var minDelay = 1000;
+            var delay = Math.max(minDelay, this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1));
             this.logger.info("Attempting to reconnect (".concat(this.reconnectAttempts, "/").concat(this.maxReconnectAttempts, ") in ").concat(delay, "ms..."));
             setTimeout(function () { return _this.connect(); }, delay);
         }
