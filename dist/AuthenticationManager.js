@@ -57,9 +57,9 @@ var AuthenticationManager = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         if (!this.authToken) {
-                            throw new Error('No auth token set');
+                            throw new Error("No auth token set");
                         }
-                        return [4 /*yield*/, this.requestManager.request('authenticate', { token: this.authToken }, this.websocketsServername)];
+                        return [4 /*yield*/, this.requestManager.request("authenticate", { token: this.authToken }, this.websocketsServername)];
                     case 1:
                         result = _a.sent();
                         return [2 /*return*/, result.success];

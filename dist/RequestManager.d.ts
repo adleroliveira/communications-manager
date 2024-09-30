@@ -1,7 +1,7 @@
 /// <reference types="node" />
-import { IResponseData } from './interfaces.js';
-import { EventEmitter } from 'events';
-import { WebSocketManager } from './WebSocketManager';
+import { IResponseData } from "./interfaces.js";
+import { EventEmitter } from "events";
+import { WebSocketManager } from "./WebSocketManager";
 export interface RequestManagerProps {
     webSocketManager: WebSocketManager;
     requestTimeout?: number;

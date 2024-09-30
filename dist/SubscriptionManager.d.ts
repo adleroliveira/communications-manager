@@ -1,4 +1,4 @@
-import { RequestManager } from './RequestManager';
+import { RequestManager } from "./RequestManager";
 export declare class SubscriptionManager {
     private requestManager;
     private logger;

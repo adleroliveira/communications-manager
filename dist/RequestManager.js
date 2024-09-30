@@ -63,7 +63,7 @@ var RequestManager = /** @class */ (function (_super) {
         _this.logger = new Logger_1.Logger(Logger_1.LogLevel.INFO);
         _this.requestTimeout = props.requestTimeout || 30000;
         _this.webSocketManager = props.webSocketManager;
-        _this.webSocketManager.on('message', _this.handleMessage.bind(_this));
+        _this.webSocketManager.on("message", _this.handleMessage.bind(_this));
         return _this;
     }
     RequestManager.prototype.request = function (requestType, body, to) {
@@ -74,7 +74,7 @@ var RequestManager = /** @class */ (function (_super) {
                         var request = _this.createRequest(requestType, body, to);
                         var timeoutId = setTimeout(function () {
                             _this.pendingRequests.delete(request.header.requestId);
-                            reject(new Error('Request timeout'));
+                            reject(new Error("Request timeout"));
                         }, _this.requestTimeout);
                         var requestCallback = function (response) {
                             clearTimeout(timeoutId);
@@ -97,12 +97,12 @@ var RequestManager = /** @class */ (function (_super) {
             header: {
                 timestamp: Date.now(),
                 requestId: "RM-".concat((0, uuid_1.v4)()),
-                requesterAddress: 'RequestManager',
+                requesterAddress: "RequestManager",
                 recipientAddress: to,
                 requestType: requestType,
-                authToken: this.authToken
+                authToken: this.authToken,
             },
-            body: body
+            body: body,
         };
     };
     RequestManager.prototype.handleMessage = function (data) {
@@ -115,11 +115,11 @@ var RequestManager = /** @class */ (function (_super) {
                 this.handleResponse(parsed);
             }
             else {
-                this.logger.warn('Received message with unknown structure:', data);
+                this.logger.warn("Received message with unknown structure:", data);
             }
         }
         catch (error) {
-            this.logger.error('Error parsing message:', error);
+            this.logger.error("Error parsing message:", error);
         }
     };
     RequestManager.prototype.handleIncomingRequest = function (request) {
@@ -130,14 +130,14 @@ var RequestManager = /** @class */ (function (_super) {
                 var response = {
                     requestHeader: request.header,
                     responseHeader: {
-                        responderAddress: 'RequestManager',
-                        timestamp: Date.now()
+                        responderAddress: "RequestManager",
+                        timestamp: Date.now(),
                     },
                     body: {
                         data: responseBody,
                         success: true,
-                        error: null
-                    }
+                        error: null,
+                    },
                 };
                 _this.webSocketManager.send(JSON.stringify(response));
             });

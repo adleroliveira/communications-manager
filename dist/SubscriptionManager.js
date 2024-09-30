@@ -52,24 +52,37 @@ var SubscriptionManager = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         subscription = this.subscriptions.get(channel);
-                        if (!(!subscription || subscription.status !== interfaces_1.SubscriptionStatus.Subscribed)) return [3 /*break*/, 4];
-                        this.subscriptions.set(channel, { channel: channel, status: interfaces_1.SubscriptionStatus.Pending });
+                        if (!(!subscription ||
+                            subscription.status !== interfaces_1.SubscriptionStatus.Subscribed)) return [3 /*break*/, 4];
+                        this.subscriptions.set(channel, {
+                            channel: channel,
+                            status: interfaces_1.SubscriptionStatus.Pending,
+                        });
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, this.requestManager.request("subscribe", { channel: channel })];
+                        return [4 /*yield*/, this.requestManager.request("subscribe", {
+                                channel: channel,
+                            })];
                     case 2:
                         result = _a.sent();
                         if (!result.success) {
-                            throw (result.error || new Error("Error trying to subscribe to channel ".concat(channel)));
+                            throw (result.error ||
+                                new Error("Error trying to subscribe to channel ".concat(channel)));
                         }
-                        this.subscriptions.set(channel, { channel: channel, status: interfaces_1.SubscriptionStatus.Subscribed });
+                        this.subscriptions.set(channel, {
+                            channel: channel,
+                            status: interfaces_1.SubscriptionStatus.Subscribed,
+                        });
                         this.logger.info("Subscribed to channel", channel);
                         return [3 /*break*/, 4];
                     case 3:
                         error_1 = _a.sent();
                         this.logger.error("Error trying to subscribe to channel ".concat(channel), error_1);
-                        this.subscriptions.set(channel, { channel: channel, status: interfaces_1.SubscriptionStatus.Unsubscribed });
+                        this.subscriptions.set(channel, {
+                            channel: channel,
+                            status: interfaces_1.SubscriptionStatus.Unsubscribed,
+                        });
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
                 }
@@ -79,7 +92,10 @@ var SubscriptionManager = /** @class */ (function () {
     SubscriptionManager.prototype.unsubscribeAll = function () {
         var _this = this;
         this.subscriptions.forEach(function (subscription) {
-            _this.subscriptions.set(subscription.channel, { channel: subscription.channel, status: interfaces_1.SubscriptionStatus.Unsubscribed });
+            _this.subscriptions.set(subscription.channel, {
+                channel: subscription.channel,
+                status: interfaces_1.SubscriptionStatus.Unsubscribed,
+            });
         });
     };
     return SubscriptionManager;

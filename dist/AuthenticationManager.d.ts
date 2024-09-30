@@ -1,4 +1,4 @@
-import { RequestManager } from './RequestManager';
+import { RequestManager } from "./RequestManager";
 export declare class AuthenticationManager {
     private requestManager;
     private websocketsServername;

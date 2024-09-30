@@ -70,7 +70,10 @@ var CommunicationsManager = /** @class */ (function (_super) {
         _this.validateConfig(config);
         try {
             _this.webSocketManager = new WebSocketManager_1.WebSocketManager(config.url, config.secure, config.maxReconnectAttempts, config.reconnectInterval);
-            _this.requestManager = new RequestManager_1.RequestManager({ webSocketManager: _this.webSocketManager, requestTimeout: config.requestTimeout });
+            _this.requestManager = new RequestManager_1.RequestManager({
+                webSocketManager: _this.webSocketManager,
+                requestTimeout: config.requestTimeout,
+            });
             _this.authManager = new AuthenticationManager_1.AuthenticationManager(_this.requestManager);
             _this.subscriptionManager = new SubscriptionManager_1.SubscriptionManager(_this.requestManager);
             _this.heartbeatManager = new HeartbeatManager_1.HeartbeatManager(_this.requestManager, config.heartbeatInterval);
@@ -80,21 +83,21 @@ var CommunicationsManager = /** @class */ (function (_super) {
             _this.setupWebSocketHooks();
         }
         catch (error) {
-            _this.logger.error('Error initializing CommunicationsManager', { error: error });
-            throw new Error('Failed to initialize CommunicationsManager');
+            _this.logger.error("Error initializing CommunicationsManager", { error: error });
+            throw new Error("Failed to initialize CommunicationsManager");
         }
         return _this;
     }
     CommunicationsManager.prototype.validateConfig = function (config) {
         if (!config.url) {
-            throw new Error('URL is required in the configuration');
+            throw new Error("URL is required in the configuration");
         }
     };
     CommunicationsManager.prototype.setupWebSocketHooks = function () {
-        this.webSocketManager.on('open', this.handleOpen.bind(this));
-        this.webSocketManager.on('close', this.handleClose.bind(this));
-        this.webSocketManager.on('error', this.handleError.bind(this));
-        this.webSocketManager.on('maxReconnectAttemptsReached', this.handleMaxReconnectAttemptsReached.bind(this));
+        this.webSocketManager.on("open", this.handleOpen.bind(this));
+        this.webSocketManager.on("close", this.handleClose.bind(this));
+        this.webSocketManager.on("error", this.handleError.bind(this));
+        this.webSocketManager.on("maxReconnectAttemptsReached", this.handleMaxReconnectAttemptsReached.bind(this));
     };
     CommunicationsManager.prototype.handleOpen = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -115,7 +118,7 @@ var CommunicationsManager = /** @class */ (function (_super) {
                         authSuccess = _a.sent();
                         if (authSuccess) {
                             this.isAuthenticated = true;
-                            this.emit('authenticated');
+                            this.emit("authenticated");
                             this.logger.info("Authentication successful");
                         }
                         else {
@@ -150,27 +153,33 @@ var CommunicationsManager = /** @class */ (function (_super) {
                             this.heartbeatManager.startHeartbeat();
                             return [2 /*return*/, true];
                         }
+                        else {
+                            this.emit("authenticationFailed", "Authentication failed");
+                            return [2 /*return*/, false];
+                        }
                         return [3 /*break*/, 3];
                     case 2:
                         error_2 = _a.sent();
                         this.logger.error("Error during authentication", { error: error_2 });
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/, false];
+                        this.emit("error", new Error("Authentication error: " +
+                            (error_2 instanceof Error ? error_2.message : String(error_2))));
+                        return [2 /*return*/, false];
+                    case 3: return [2 /*return*/];
                 }
             });
         });
     };
     CommunicationsManager.prototype.handleClose = function (event) {
-        this.logger.info('WebSocket connection closed', { event: event });
+        this.logger.info("WebSocket connection closed", { event: event });
         this.heartbeatManager.stopHeartbeat();
         this.subscriptionManager.unsubscribeAll();
     };
     CommunicationsManager.prototype.handleError = function (error) {
-        this.logger.error('WebSocket error:', { error: error });
+        this.logger.error("WebSocket error:", { error: error });
         this.subscriptionManager.unsubscribeAll();
     };
     CommunicationsManager.prototype.handleMaxReconnectAttemptsReached = function () {
-        this.logger.error('Maximum reconnection attempts reached. Use reconnect() method to try again.');
+        this.logger.error("Maximum reconnection attempts reached. Use reconnect() method to try again.");
     };
     CommunicationsManager.prototype.ensureAuthenticated = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -185,7 +194,7 @@ var CommunicationsManager = /** @class */ (function (_super) {
                     case 1:
                         _a.sent();
                         return [3 /*break*/, 4];
-                    case 2: return [4 /*yield*/, new Promise(function (resolve) { return _this.once('authenticated', resolve); })];
+                    case 2: return [4 /*yield*/, new Promise(function (resolve) { return _this.once("authenticated", resolve); })];
                     case 3:
                         _a.sent();
                         _a.label = 4;
@@ -205,7 +214,7 @@ var CommunicationsManager = /** @class */ (function (_super) {
                             return [2 /*return*/, this.requestManager.request(requestType, body, to)];
                         }
                         catch (error) {
-                            this.logger.error('Error making request', { requestType: requestType, error: error });
+                            this.logger.error("Error making request", { requestType: requestType, error: error });
                             throw error;
                         }
                         return [2 /*return*/];
@@ -224,7 +233,7 @@ var CommunicationsManager = /** @class */ (function (_super) {
                             return [2 /*return*/, this.subscriptionManager.subscribe(channel)];
                         }
                         catch (error) {
-                            this.logger.error('Error subscribing to channel', { channel: channel, error: error });
+                            this.logger.error("Error subscribing to channel", { channel: channel, error: error });
                             throw error;
                         }
                         return [2 /*return*/];
@@ -236,7 +245,7 @@ var CommunicationsManager = /** @class */ (function (_super) {
         this.authManager.setAuthToken(token);
     };
     CommunicationsManager.prototype.close = function () {
-        this.logger.info('Closing CommunicationsManager');
+        this.logger.info("Closing CommunicationsManager");
         this.heartbeatManager.stopHeartbeat();
         this.webSocketManager.close();
         this.isAuthenticated = false;
@@ -244,20 +253,20 @@ var CommunicationsManager = /** @class */ (function (_super) {
         this.removeAllListeners();
     };
     CommunicationsManager.prototype.reconnect = function () {
-        this.logger.info('Manual reconnection initiated.');
+        this.logger.info("Manual reconnection initiated.");
         this.webSocketManager.reconnect();
     };
     CommunicationsManager.prototype.onOpen = function (callback) {
-        this.webSocketManager.on('open', callback);
+        this.webSocketManager.on("open", callback);
     };
     CommunicationsManager.prototype.onClose = function (callback) {
-        this.webSocketManager.on('close', callback);
+        this.webSocketManager.on("close", callback);
     };
     CommunicationsManager.prototype.onError = function (callback) {
-        this.webSocketManager.on('error', callback);
+        this.webSocketManager.on("error", callback);
     };
     CommunicationsManager.prototype.onMessage = function (callback) {
-        this.webSocketManager.on('message', callback);
+        this.webSocketManager.on("message", callback);
     };
     CommunicationsManager.prototype.onRequest = function (requestType, callback) {
         this.requestManager.on(requestType, callback);

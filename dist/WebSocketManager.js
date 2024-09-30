@@ -41,24 +41,24 @@ var WebSocketManager = /** @class */ (function (_super) {
         this.setHooks();
     };
     WebSocketManager.prototype.getSecureUrl = function (url, secure) {
-        return secure ? url.replace(/^ws:/, 'wss:') : url;
+        return secure ? url.replace(/^ws:/, "wss:") : url;
     };
     WebSocketManager.prototype.setHooks = function () {
         var _this = this;
         this.ws.onopen = function () {
             _this.logger.info("WebSocket opened. ReadyState: ".concat(_this.ws.readyState));
-            _this.emit('open');
+            _this.emit("open");
         };
         this.ws.onclose = function (event) {
             _this.logger.info("WebSocket closed. ReadyState: ".concat(_this.ws.readyState, ". Code: ").concat(event.code, ", Reason: ").concat(event.reason));
-            _this.emit('close', event);
+            _this.emit("close", event);
             _this.handleReconnection();
         };
         this.ws.onerror = function (error) {
-            _this.logger.error('WebSocket error:', error);
-            _this.emit('error', error);
+            _this.logger.error("WebSocket error:", error);
+            _this.emit("error", error);
         };
-        this.ws.onmessage = function (event) { return _this.emit('message', event.data); };
+        this.ws.onmessage = function (event) { return _this.emit("message", event.data); };
     };
     WebSocketManager.prototype.handleReconnection = function () {
         var _this = this;
@@ -70,8 +70,8 @@ var WebSocketManager = /** @class */ (function (_super) {
             setTimeout(function () { return _this.connect(); }, delay);
         }
         else {
-            this.logger.error('Max reconnection attempts reached. Please reconnect manually.');
-            this.emit('maxReconnectAttemptsReached');
+            this.logger.error("Max reconnection attempts reached. Please reconnect manually.");
+            this.emit("maxReconnectAttemptsReached");
         }
     };
     WebSocketManager.prototype.send = function (message) {
@@ -79,14 +79,15 @@ var WebSocketManager = /** @class */ (function (_super) {
             this.ws.send(message);
         }
         else {
-            this.emit('error', new Error('WebSocket is not open'));
+            var error = new Error("WebSocket is not open");
+            this.emit("error", error);
         }
     };
     WebSocketManager.prototype.close = function () {
         this.ws.close();
     };
     WebSocketManager.prototype.reconnect = function () {
-        this.logger.debug('Manual reconnection initiated.');
+        this.logger.debug("Manual reconnection initiated.");
         this.reconnectAttempts = 0;
         this.close();
         this.connect();

@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 export declare class WebSocketManager extends EventEmitter {
     private logger;
     private ws;

@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { IResponseData } from "./interfaces";
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 export interface ICommunicationsManagerConfig {
     url: string;
     secure?: boolean;
