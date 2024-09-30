@@ -1,6 +1,6 @@
 {
   "name": "communications-manager",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Handle Websocket and Rest communications with micro services built using @adleroliveira/MicroserviceFramework library",
   "main": "dist/CommunicationsManager.js",
   "types": "dist/CommunicationsManager.d.ts",
